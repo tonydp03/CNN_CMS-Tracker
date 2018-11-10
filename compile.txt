@@ -1,0 +1,55 @@
+***** FULL COMPILE (From the Makefile used in TensorRT samples *****
+
+*** Creating a .d file
+g++ -MM -MF testing/sampleTestMNIST_new.d -MP -MT testing/sampleTestMNIST_new.o -Wall -std=c++11 -I"/data/user/adipilat/inferenceGPU/venv/mycuda/include" -I"/usr/local/include" -I"/data/user/adipilat/inferenceGPU/venv/TensorRT-4.0.1.6/samples/common" -I"/data/user/adipilat/inferenceGPU/venv/mycuda/include" -I"/data/user/adipilat/inferenceGPU/venv/TensorRT-4.0.1.6/include"  -D_REENTRANT inferenceTRT.cpp
+
+
+*** Compiling: sampleTestMNIST_new.cpp
+g++ -Wall -std=c++11 -I"/data/user/adipilat/inferenceGPU/venv/mycuda/include" -I"/usr/local/include" -I"/data/user/adipilat/inferenceGPU/venv/TensorRT-4.0.1.6/samples/common" -I"/data/user/adipilat/inferenceGPU/venv/mycuda/include" -I"/data/user/adipilat/inferenceGPU/venv/TensorRT-4.0.1.6/include"  -D_REENTRANT -c -o  testing/sampleTestMNIST_new.o inferenceTRT.cpp
+
+*** Linking: testing/sample_test_mnist_new
+g++ -o  testing/sample_test_mnist_new  testing/sampleTestMNIST_new.o -L"" -L"/data/user/adipilat/inferenceGPU/venv/mycuda/targets/x86_64-linux/lib64" -L"/usr/local/lib" -L"/data/user/adipilat/inferenceGPU/venv/mycuda/lib64" -L"/data/user/adipilat/inferenceGPU/venv/mycuda/lib64" -L"/data/user/adipilat/inferenceGPU/venv/TensorRT-4.0.1.6/lib"  -Wl,--start-group -lnvinfer -lnvparsers -lnvinfer_plugin -lcudnn -lcublas -lcudart_static -lnvToolsExt -lcudart -lrt -ldl -lpthread -Wl,--end-group
+
+__________________________________________________________________________________
+
+************* TO BE USED *******************
+
+
+***** MINIMAL COMPILE ******
+
+g++ testingTRT.cpp -o testingTRT -std=c++11 -Wl,--start-group -lnvinfer -lnvparsers -lnvinfer_plugin -lcudnn -lcublas -lcudart_static -lnvToolsExt -lcudart -lrt -ldl -lpthread -Wl,--end-group
+
+
+
+***** IF READING FROM HDF5 FILE *****
+
+g++ testingTRT.cpp -o testingTRT -std=c++11 -Wl,--start-group -lnvinfer -lnvparsers -lnvinfer_plugin -lcudnn -lcublas -lcudart_static -lnvToolsExt -lcudart -lrt -ldl -lpthread -Wl,--end-group -lhdf5_cpp -lhdf5
+
+
+****** TO CONVERT A FROZEN MODEL TO A UFF MODEL (IMPORTED IN TENSORRT) ******
+
+convert-to-uff tensorflow -o name_of_output_uff_file --input-file name_of_input_pb_file -O name_of_output_tensor
+
+
+
+_________________________________________________________________________
+
+**** INCLUDED IN THE .sh FILE (ENVIRONMENT VARIABLE: LIBRARY_PATH) ****
+
+-L/data/user/adipilat/inferenceGPU/venv/mycuda/lib64 -L/data/user/adipilat/inferenceGPU/venv/TensorRT-4.0.1.6/lib
+
+
+**** INCLUDED IN THE .sh FILE (ENVIRONMENT VARIABLE: CPLUS_INCLUDE_PATH) ****
+
+-I/data/user/adipilat/inferenceGPU/venv/TensorRT-4.0.1.6/samples/common -I/data/user/adipilat/inferenceGPU/venv/TensorRT-4.0.1.6/include
+
+
+******OUT (NOT USED) *****
+
+-I/usr/local/include
+-I/data/user/adipilat/inferenceGPU/venv/mycuda/include
+
+-L/usr/local/lib
+-L/data/user/adipilat/inferenceGPU/venv/mycuda/targets/x86_64-linux/lib64
+
+
