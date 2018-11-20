@@ -50,7 +50,7 @@ int main(int argc, char** argv){
   std::cout << "*** MODEL TO IMPORT: " << fileName << "\n";
   std::cout << "*** DATASET FILE: " << FILE_NAME << std::endl;
 
-  int batchSize = 1;
+  int batchSize = 1; 
   float ms;
   Logger gLogger; // object for warning and error reports
 
@@ -81,7 +81,7 @@ int main(int argc, char** argv){
   //Build the engine using the builder object
   builder->setMaxBatchSize(maxBatchSize);
   builder->setMaxWorkspaceSize(MAX_WORKSPACE);
-  //builder->setFp16Mode(true); //16-bit kernels are permitted
+  builder->setFp16Mode(true); //16-bit kernels are permitted
   ICudaEngine* engine = builder->buildCudaEngine(*network);
   assert(engine);
   std::cout << "*** BUILDING DONE ***" << std::endl; 
@@ -103,13 +103,8 @@ int main(int argc, char** argv){
   assert(context);
 
   // Create the input and the output buffers on Host
-  float input[INPUT_CH * INPUT_H * INPUT_W];
-  float *input_data;
   float label_output[2];
   float output[OUTPUT_SIZE];
- 
-  //Create an input buffer to test a single row
-  float *input_onerow;
  
   //Open the file and the dataset
   H5File file( FILE_NAME, H5F_ACC_RDONLY );
@@ -130,20 +125,14 @@ int main(int argc, char** argv){
   std::cout << "MEMSPACE CREATED" << std::endl;
 
   //Read dataset back and display
-  input_data = (float *) malloc(dims[0] * dims[1] * sizeof(float));
+  float *input_data = new float[dims[0] * dims[1]];
   dataset.read(input_data, PredType::NATIVE_FLOAT, memspace, dataspace);
   std::cout << "DATASET READ" << std::endl;
 
-  int i, j;
+  int i(0);
   srand(time(NULL));
   i = rand() % dims[0];
   std::cout << "Image number: " << i << std::endl; 
-  input_onerow = (float *) malloc((dims[1]-2) * sizeof(float));
-  for(j = 0; j < dims[1] - 2; j++){
-    input_onerow[j]=input_data[i * dims[1] + j];
-    //std::cout << input_onerow[j] << " ";
-  }
-  //std::cout << "\n" << std::endl;
   label_output[0] = input_data[i*dims[1] + dims[1] - 2];
   label_output[1] = input_data[i*dims[1] + dims[1] - 1];
   std::cout << "Label output: y0 = " << label_output[0] << " y1 = " << label_output[1] << std::endl;
@@ -164,28 +153,30 @@ int main(int argc, char** argv){
   CHECK(cudaMalloc(&buffers[outputIndex], batchSize * OUTPUT_SIZE * sizeof(float)));
 
   // Create stream                                                           
-  cudaStream_t stream;
-  CHECK(cudaStreamCreate(&stream));
+  //cudaStream_t stream;
+  //CHECK(cudaStreamCreate(&stream));
 
   // Copy the data from host to device
-  CHECK(cudaMemcpyAsync(buffers[inputIndex], input_onerow, batchSize * INPUT_CH * INPUT_H * INPUT_W * sizeof(float), cudaMemcpyHostToDevice, stream));
+  //CHECK(cudaMemcpyAsync(buffers[inputIndex], &input_data[i * dims[1]], batchSize * INPUT_CH * INPUT_H * INPUT_W * sizeof(float), cudaMemcpyHostToDevice, stream));
+  CHECK(cudaMemcpy(buffers[inputIndex], &input_data[i * dims[1]], batchSize * INPUT_CH * INPUT_H * INPUT_W * sizeof(float), cudaMemcpyHostToDevice));
   
-  // Enqueue the kernels on a CUDA stream (TensorRT execution is typically asynchronous)
+  // Enqueue the kernels on a CUDA stream for the asynchronous execution
   auto t_start = std::chrono::high_resolution_clock::now();
-  context->enqueue(batchSize, buffers, stream, nullptr);
-  //context->execute(batchSize, buffers);
-  cudaStreamSynchronize(stream); 
+  //context->enqueue(batchSize, buffers, stream, nullptr);
+  context->execute(batchSize, buffers); // This is a synchronous execution of the kernel
+  //cudaStreamSynchronize(stream); 
   auto t_end = std::chrono::high_resolution_clock::now();
   ms = std::chrono::duration<float, std::milli>(t_end - t_start).count();
 
   // Copy the data from device to host
-  CHECK(cudaMemcpyAsync(output, buffers[outputIndex], batchSize * OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
+  //CHECK(cudaMemcpyAsync(output, buffers[outputIndex], batchSize * OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost, stream));
+  CHECK(cudaMemcpy(output, buffers[outputIndex], batchSize * OUTPUT_SIZE * sizeof(float), cudaMemcpyDeviceToHost));
 
   // Synchronize
-  cudaStreamSynchronize(stream);
+  //cudaStreamSynchronize(stream);
 
   // Release buffers
-  cudaStreamDestroy(stream);
+  //cudaStreamDestroy(stream);
   CHECK(cudaFree(buffers[inputIndex]));
   CHECK(cudaFree(buffers[outputIndex]));
 
@@ -201,7 +192,8 @@ int main(int argc, char** argv){
     std::cout << "y" << i << " = " << output[i] << "\n";
 
   std::cout << std::endl;
-
+  delete[] input_data;
+  
   shutdownProtobufLibrary();
   return 0;
 

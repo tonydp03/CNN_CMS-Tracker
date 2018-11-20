@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, "/lustrehome/adipilato/venv_CNNDoublets_new/CNNFiltering/Tony_TensorRTtest")
+sys.path.insert(0, "/lustrehome/adipilato/venv_CNNDoublets_new/CNN_CMS-Tracker")
 import argparse
 import datetime
 import json
@@ -252,21 +252,29 @@ print 'Data Linear Test Shape: ', data_linear_test.shape
 '''
 
 data_linear_train_df = pd.DataFrame(data_linear_train,columns=allLayerPixels)
-data_linear_train_df["y0"] = y_train[:,0]
-data_linear_train_df["y1"] = y_train[:,1]
-data_linear_train_df.head()
+#data_linear_train_df["y0"] = y_train[:,0]
+#data_linear_train_df["y1"] = y_train[:,1]
+#data_linear_train_df.head()
 data_linear_test_df = pd.DataFrame(data_linear_test,columns=allLayerPixels)
-data_linear_test_df["y0"] = y_test[:,0]
-data_linear_test_df["y1"] = y_test[:,1]
-data_linear_test_df.head()
+#data_linear_test_df["y0"] = y_test[:,0]
+#data_linear_test_df["y1"] = y_test[:,1]
+#data_linear_test_df.head()
 data_linear_val_df = pd.DataFrame(data_linear_val,columns=allLayerPixels)
-data_linear_val_df["y0"] = y_val[:,0]
-data_linear_val_df["y1"] = y_val[:,1]
-data_linear_val_df.head()
+#data_linear_val_df["y0"] = y_val[:,0]
+#data_linear_val_df["y1"] = y_val[:,1]
+#data_linear_val_df.head()
+
+label_train_df = pd.DataFrame(y_train, columns=('y0', 'y1'))
+label_val_df = pd.DataFrame(y_val, columns=('y0', 'y1'))
+label_test_df = pd.DataFrame(y_test, columns=('y0', 'y1'))
 
 data_linear_val_df.to_hdf("pixel_only_data_val.h5","data",append=False)
 data_linear_test_df.to_hdf("pixel_only_data_test.h5","data",append=False)
 data_linear_train_df.to_hdf("pixel_only_data_train.h5","data",append=False)
+
+label_train_df.to_hdf("pixel_only_data_train.h5","labels",append=False)
+label_val_df.to_hdf("pixel_only_data_val.h5","labels",append=False)
+label_test_df.to_hdf("pixel_only_data_test.h5","labels",append=False)
 
 print 'Data files created succesfully!'
 
@@ -296,13 +304,14 @@ tf.train.write_graph(frozen_graph, "./", "pixel_only_final.pb", as_text=False)
 print 'Loading the model for inference...'
 model = pixel_only_model(n_channels=X_train_hit.shape[1])
 model.load_weights("pixel_only_final.h5")
-test_df = pd.read_hdf("pixel_only_data_test.h5")
+test_df = pd.read_hdf("pixel_only_data_test.h5", "data").values.reshape(-1,20,16,16)
 
 
-X_test_hist = test_df[allLayerPixels].values.reshape(-1,20,16,16)
-X_test_hist.shape
+#X_test_hist = test_df[allLayerPixels].values.reshape(-1,20,16,16)
+#X_test_hist.shape
 
-y_test = test_df[["y0","y1"]].values.reshape(-1,2)
+#y_test = test_df[["y0","y1"]].values.reshape(-1,2)
+y_test = pd.read_hdf("pixel_only_data_test.h5", "labels").values.reshape(-1,2)
 
 loss, acc = model.evaluate(X_test_hit, y_test, batch_size=2048)
 test_pred = model.predict(X_test_hit)

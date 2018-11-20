@@ -3,6 +3,8 @@ import tensorflow as tf
 import pandas as pd
 import numpy as np
 import random
+import time
+
 
 def load_graph(frozen_graph_filename):
     # We load the protobuf file from the disk and parse it to retrieve the 
@@ -40,37 +42,45 @@ if __name__ == '__main__':
     #print('\n\n')
     #print y
 
-    hdfFile = pd.read_hdf("pixel_only_data_test.h5")
-    #print hdfFile
+    inputData = pd.read_hdf("pixel_only_data_test.h5", "data").values.reshape(-1,20,16,16)
+    ncols = 20 * 16 * 16
+    print "Number of columns: ", ncols    
+    print "inputData shape: ", inputData.shape
+    labelOutput = pd.read_hdf("pixel_only_data_test.h5", "labels").values.reshape(-1,2)
+    
 
-    nrows = hdfFile.shape[0]
+    #nrows = hdfFile.shape[0]
     #print 'Number of images: ', nrows
-    print '\nSelecting one image randomly...'
-    testIdx = random.randint(0, nrows)
-    print '\nSelected image n', testIdx    
-    testRow = hdfFile.loc[testIdx].values
-    inputNumber = len(testRow)
+    #print '\nSelecting one image randomly...'
+    #testIdx = random.randint(0, nrows)
+    #print '\nSelected image n', testIdx    
+    #testRow = hdfFile.loc[testIdx].values
+    #inputNumber = len(testRow)
     #print inputNumber
     #print '\n'
     #print testRow
 
-    inputData = testRow[:(inputNumber-2)] 
-    labelOutput = testRow[inputNumber-2:]
+    #inputData = testRow[:(inputNumber-2)] 
+    #labelOutput = testRow[inputNumber-2:]
 
     #print inputData
     #print '\n'
     #print labelOutput
 
-    inputData = np.reshape(inputData, (1,20,16,16))
+    #inputData = np.reshape(inputData, (1,20,16,16))
     #print inputData
-
+    
+    batchSize = 10
+    
     # We launch a Session
+
     with tf.Session(graph=graph) as sess:
+        start = time.time()
+        for i in range(batchSize):
+            y_out = sess.run(y, feed_dict={x: inputData[i:i+1,:,:,:]})
+            print 'Expected output: ', labelOutput[i:i+1,:]
+            print 'Network output: ', y_out
+            print '\n'
 
-        y_out = sess.run(y, feed_dict={x: inputData})
-
-
-        print 'Expected output: ', labelOutput
-        print '\n'
-        print 'Network output: ', y_out
-
+        elapsed_time = time.time() - start
+    print "Elapsed time to make inference: ", elapsed_time 
