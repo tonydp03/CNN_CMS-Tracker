@@ -130,8 +130,8 @@ int main(int argc, char** argv){
   std::cout << "DATASET READ" << std::endl;
 
   int i(0);
-  srand(time(NULL));
-  i = rand() % dims[0];
+  //srand(time(NULL));
+  //i = rand() % dims[0];
   std::cout << "Image number: " << i << std::endl; 
   label_output[0] = input_data[i*dims[1] + dims[1] - 2];
   label_output[1] = input_data[i*dims[1] + dims[1] - 1];
